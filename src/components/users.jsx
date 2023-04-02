@@ -1,90 +1,67 @@
+/* eslint-disable multiline-ternary */
 import React, { useState } from "react";
-import api from "../api";
+import paginate from "../utils/paginate";
+import Pagination from "./pagination";
+import SearchStatus from "./searchStatus";
+import User from "./user";
+import PropTypes from "prop-types";
 
-const Users = () => {
-  const [users, setUsers] = useState(api.users.fetchAll());
-  const [counter, setCounter] = useState(users.length);
+const Users = ({ users, handleToggleBookmark, handleDelete }) => {
+    const pageSize = 4;
+    const [currentPage, setCurrentPage] = useState(1);
+    const handlePageChange = (pageIndex) => {
+        setCurrentPage(pageIndex);
+    };
 
-  const renderPhrase = (number) => {
-    const lastDigit = number % 10;
-    const lastSecondDigit = number % 100;
-    return lastDigit >= 2 &&
-      lastDigit <= 4 &&
-      (lastSecondDigit <= 10 || lastSecondDigit >= 20)
-      ? "человека тусанут с тобой  сегодня "
-      : "человек тусанет с тобой сегодня";
-  };
+    const renderTableHead = () => {
+        return users.length !== 0 ? (
+            <tr>
+                <th scope="col">Имя</th>
+                <th scope="col">Качества</th>
+                <th scope="col">Профессия</th>
+                <th scope="col">Встретился, раз</th>
+                <th scope="col">Оценка</th>
+                <th scope="col">Избранное</th>
+                <th scope="col"></th>
+            </tr>
+        ) : (
+            ""
+        );
+    };
+    const userCrop = paginate(users, currentPage, pageSize);
 
-  const formatCount = () => {
-    return counter === 0
-      ? "Никто с тобой не тусанет"
-      : counter + " " + renderPhrase(counter);
-  };
-  const getBadgeClasses = () => {
-    let classesH1 = "badge fs-5 rounded-2 mt-1";
-    classesH1 += counter === 0 ? " bg-danger" : " bg-primary ";
-    return classesH1;
-  };
+    const renderTableBody = () => {
+        return userCrop.map((user) => (
+            <User
+                key={user._id}
+                user={user}
+                handleDelete={handleDelete}
+                handleToggleBookmark={handleToggleBookmark}
+            />
+        ));
+    };
 
-  const handleDelete = (id) => {
-    setUsers((prevState) => prevState.filter((user) => user._id !== id));
-    setCounter(counter - 1);
-  };
-
-  const renderTableHead = () => {
-    return users.length !== 0 ? (
-      <tr>
-        <th scope="col">Имя</th>
-        <th scope="col">Качества</th>
-        <th scope="col">Профессия</th>
-        <th scope="col">Встретился, раз</th>
-        <th scope="col">Оценка</th>
-        <th scope="col"></th>
-      </tr>
-    ) : (
-      ""
+    return (
+        <>
+            <SearchStatus length={users.length} />
+            <table className="table">
+                <thead>{renderTableHead()}</thead>
+                <tbody>{renderTableBody()}</tbody>
+            </table>
+            <Pagination
+                currentPage={currentPage}
+                itemsCount={users.length}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+            />
+        </>
     );
-  };
+};
 
-  const renderTableBody = () => {
-    return users.map((user) => (
-      <tr key={user._id}>
-        <td>{user.name}</td>
-        <td>
-          {user.qualities.map((quality) => (
-            <span
-              key={quality._id}
-              className={`badge bg-${quality.color} d-inline-flex m-1`}
-            >
-              {quality.name}
-            </span>
-          ))}
-        </td>
-        <td>{user.profession.name}</td>
-        <td>{user.completedMeetings}</td>
-        <td>{user.rate}/5.0</td>
-        <td>
-          <button
-            className="btn btn-danger"
-            onClick={() => handleDelete(user._id)}
-          >
-            delete
-          </button>
-        </td>
-      </tr>
-    ));
-  };
-
-  return (
-    <>
-      <h1 className={getBadgeClasses()}>{formatCount()} </h1>
-      <table className="table">
-        <thead>{renderTableHead()}</thead>
-        <tbody>{renderTableBody()}</tbody>
-      </table>
-    </>
-  );
+Users.propTypes = {
+    users: PropTypes.array.isRequired,
+    handleToggleBookmark: PropTypes.func.isRequired,
+    handleDelete: PropTypes.func.isRequired
 };
 
 export default Users;
- 
